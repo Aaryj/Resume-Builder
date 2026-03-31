@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ResumeAI — Smart Resume Builder</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f13;
+    --bg2: #16161d;
+    --bg3: #1e1e28;
+    --bg4: #252532;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0eff8;
+    --text2: #9998b3;
+    --text3: #6665808;
+    --accent: #7c6ff7;
+    --accent2: #a599ff;
+    --accent-glow: rgba(124,111,247,0.25);
+    --green: #3ecf8e;
+    --green-bg: rgba(62,207,142,0.1);
+    --red: #f46b5d;
+    --red-bg: rgba(244,107,93,0.1);
+    --yellow: #fbbf24;
+    --yellow-bg: rgba(251,191,36,0.1);
+    --blue: #60a5fa;
+    --blue-bg: rgba(96,165,250,0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --font: 'DM Sans', sans-serif;
+    --font-serif: 'DM Serif Display', serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 48px rgba(0,0,0,0.5);
+  }
+
+  [data-theme="light"] {
+    --bg: #f7f6ff;
+    --bg2: #ffffff;
+    --bg3: #f0effe;
+    --bg4: #e8e6fc;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #1a1928;
+    --text2: #5a597a;
+    --text3: #8886a8;
+    --accent: #6456e8;
+    --accent2: #7c6ff7;
+    --accent-glow: rgba(100,86,232,0.15);
+    --green: #059669;
+    --green-bg: rgba(5,150,105,0.08);
+    --red: #dc2626;
+    --red-bg: rgba(220,38,38,0.08);
+    --yellow: #d97706;
+    --yellow-bg: rgba(217,119,6,0.08);
+    --blue: #2563eb;
+    --blue-bg: rgba(37,99,235,0.08);
+    --shadow: 0 4px 24px rgba(0,0,0,0.1);
+    --shadow-lg: 0 8px 48px rgba(0,0,0,0.15);
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 16px var(--accent-glow); }
+  .btn-ghost {
+    background: transparent; color: var(--text2); border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+  .btn-danger {
+    background: var(--red-bg); color: var(--red); border: 1px solid transparent;
+  }
+  .btn-danger:hover { border-color: var(--red); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-lg { padding: 11px 22px; font-size: 14px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  /* Inputs */
+  .input, .textarea, .select {
+    width: 100%; padding: 9px 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .input:focus, .textarea:focus, .select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  .select { cursor: pointer; }
+
+  /* Cards */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .card-lg { border-radius: var(--radius-lg); padding: 24px; }
+
+  /* Labels */
+  .label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  /* Tags/Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); }
+  .badge-purple { background: var(--accent-glow); color: var(--accent2); }
+
+  /* Section title */
+  .section-title {
+    font-size: 11px; font-weight: 600; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Layout */
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .gap-4 { gap: 16px; }
+  .gap-6 { gap: 24px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .fade-in { animation: fadeIn 0.35s ease both; }
+  .slide-in { animation: slideIn 0.3s ease both; }
+
+  /* Score ring */
+  .score-ring {
+    width: 80px; height: 80px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; font-family: var(--font-mono);
+    position: relative; flex-shrink: 0;
+  }
+
+  /* Weak phrase highlight */
+  .weak-phrase {
+    background: var(--red-bg); color: var(--red);
+    border-bottom: 2px solid var(--red);
+    padding: 0 2px; cursor: pointer;
+    border-radius: 2px;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* Sidebar nav */
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    color: var(--text2); transition: all 0.18s;
+    border: 1px solid transparent;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--accent-glow); color: var(--accent2); border-color: rgba(124,111,247,0.2); }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex; gap: 4px; background: var(--bg3);
+    border-radius: var(--radius-sm); padding: 3px;
+    border: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1; padding: 7px 12px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    text-align: center; transition: all 0.2s;
+    color: var(--text2); border: none; background: transparent;
+    font-family: var(--font);
+  }
+  .tab.active { background: var(--accent); color: #fff; }
+
+  /* Header */
+  .header {
+    height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 20px;
+    position: sticky; top: 0; z-index: 100;
+    gap: 16px;
+  }
+  .logo {
+    font-family: var(--font-serif); font-size: 20px;
+    color: var(--text); display: flex; align-items: center; gap: 8px;
+    font-style: italic;
+  }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+  /* Resume preview styles */
+  #resume-preview {
+    font-family: 'DM Sans', sans-serif;
+    color: #1a1928;
+    background: #fff;
+    width: 100%;
+    min-height: 800px;
+  }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; }
+  .tooltip-box {
+    position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg4); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 8px 12px;
+    font-size: 12px; color: var(--text); white-space: nowrap;
+    pointer-events: none; z-index: 200;
+    box-shadow: var(--shadow);
+  }
+
+  /* Skill chips */
+  .skill-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 20px; padding: 4px 10px; font-size: 12px;
+    color: var(--text); transition: all 0.2s;
+  }
+  .skill-chip .remove-btn {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--red-bg); color: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; cursor: pointer; border: none; font-family: var(--font);
+    line-height: 1;
+  }
+
+  /* Upload drop zone */
+  .drop-zone {
+    border: 2px dashed var(--border2); border-radius: var(--radius);
+    padding: 32px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--bg3);
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent); background: var(--accent-glow);
+  }
+
+  /* Auth form */
+  .auth-container {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background: var(--bg);
+  }
+  .auth-card {
+    width: 100%; max-width: 420px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 36px;
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 12px 16px;
+    font-size: 13px; color: var(--text);
+    box-shadow: var(--shadow-lg); z-index: 9999;
+    display: flex; align-items: center; gap: 8px;
+    animation: slideIn 0.3s ease;
+    max-width: 320px;
+  }
+
+  /* Strength indicator segments */
+  .strength-seg {
+    height: 6px; flex: 1; border-radius: 3px; transition: background 0.4s;
+  }
+
+  /* Roast mode */
+  .roast-box {
+    background: linear-gradient(135deg, var(--red-bg), var(--yellow-bg));
+    border: 1px solid var(--red);
+    border-radius: var(--radius); padding: 16px;
+    font-size: 13px; line-height: 1.6;
+    color: var(--text);
+  }
+
+  /* Section collapsible */
+  .collapsible-header {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; padding: 10px 0; user-select: none;
+  }
+  .collapsible-header:hover .collapsible-title { color: var(--accent2); }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .hide-mobile { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const WEAK_PHRASES = [
+  'hardworking','team player','responsible for','worked on','assisted with',
+  'helped with','was involved in','participated in','worked with','detail-oriented',
+  'self-motivated','go-getter','passionate','enthusiastic','synergy','leverage',
+  'proactive','dynamic','results-driven','strong communication skills',
+  'fast learner','quick learner','multitasker','thought leader',
+];
+
+const PHRASE_ALTERNATIVES = {
+  'hardworking': ['delivered X results','exceeded targets by Y%','completed Z projects'],
+  'team player': ['collaborated with 5-person team to deliver X','partnered with cross-functional teams'],
+  'responsible for': ['led','managed','drove','owned','spearheaded'],
+  'worked on': ['engineered','built','developed','architected','implemented'],
+  'assisted with': ['contributed to','co-developed','supported launch of'],
+  'helped with': ['accelerated','enhanced','improved'],
+  'detail-oriented': ['maintained 99.9% accuracy','zero defect rate in X'],
+  'self-motivated': ['independently delivered','proactively identified'],
+  'passionate': ['have shipped X projects in Y','deep expertise in'],
+  'results-driven': ['increased revenue by X%','reduced costs by $Y'],
+  'strong communication skills': ['presented to C-suite','authored X technical docs'],
+  'fast learner': ['mastered X in Y weeks','completed Z certification'],
+  'thought leader': ['published X articles','spoke at Y conferences'],
+};
+
+const TEMPLATES = ['Modern','Classic','Minimal','Bold'];
+
+const EMPTY_RESUME = {
+  name: '', title: '', email: '', phone: '', location: '', linkedin: '', github: '', website: '',
+  summary: '',
+  skills: [],
+  experience: [],
+  education: [],
+  projects: [],
+  certifications: [],
+};
+
+const EMPTY_EXP = { id: Date.now(), company: '', role: '', duration: '', location: '', bullets: [''] };
+const EMPTY_EDU = { id: Date.now(), institution: '', degree: '', field: '', year: '', gpa: '' };
+const EMPTY_PROJ = { id: Date.now(), name: '', tech: '', description: '', url: '' };
+const EMPTY_CERT = { id: Date.now(), name: '', issuer: '', year: '' };
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+function detectWeakPhrases(text) {
+  const found = [];
+  const lower = (text||'').toLowerCase();
+  WEAK_PHRASES.forEach(p => { if (lower.includes(p)) found.push(p); });
+  return found;
+}
+
+function computeStrengthScore(resume) {
+  let score = 0;
+  if (resume.name?.trim()) score += 5;
+  if (resume.email?.trim()) score += 5;
+  if (resume.phone?.trim()) score += 3;
+  if (resume.linkedin?.trim()) score += 4;
+  if (resume.summary?.trim().length > 80) score += 10;
+  if (resume.skills?.length >= 5) score += 10;
+  if (resume.skills?.length >= 10) score += 5;
+  if (resume.experience?.length >= 1) score += 15;
+  if (resume.experience?.length >= 2) score += 5;
+  resume.experience?.forEach(e => {
+    if (e.bullets?.some(b => b.trim().length > 30)) score += 3;
+    if (e.bullets?.length >= 3) score += 2;
+  });
+  if (resume.education?.length >= 1) score += 8;
+  if (resume.projects?.length >= 1) score += 6;
+  if (resume.projects?.length >= 2) score += 4;
+  if (resume.certifications?.length >= 1) score += 5;
+  // Deductions for weak phrases
+  const allText = [resume.summary,...(resume.experience?.flatMap(e=>e.bullets)||[])].join(' ');
+  const weak = detectWeakPhrases(allText);
+  score -= weak.length * 3;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function getScoreColor(score) {
+  if (score >= 75) return 'var(--green)';
+  if (score >= 50) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function highlightWeak(text) {
+  if (!text) return text;
+  let result = text;
+  WEAK_PHRASES.forEach(p => {
+    const re = new RegExp(`(${p})`, 'gi');
+    result = result.replace(re, `<mark class="weak-phrase" title="Weak phrase — click for alternatives">$1</mark>`);
+  });
+  return result;
+}
+
+function parseResumeText(text) {
+  // Simple heuristic parser
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const result = { ...EMPTY_RESUME, skills: [], experience: [], education: [], projects: [] };
+
+  // Name = first non-empty line
+  if (lines[0]) result.name = lines[0];
+
+  // Email
+  const emailM = text.match(/[\w.+-]+@[\w-]+\.[\w.]+/);
+  if (emailM) result.email = emailM[0];
+
+  // Phone
+  const phoneM = text.match(/[\+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,3}[)]?[-\s.]?[0-9]{3,4}[-\s.]?[0-9]{3,4}/);
+  if (phoneM) result.phone = phoneM[0];
+
+  // LinkedIn
+  const liM = text.match(/linkedin\.com\/in\/[\w-]+/i);
+  if (liM) result.linkedin = 'https://' + liM[0];
+
+  // GitHub
+  const ghM = text.match(/github\.com\/[\w-]+/i);
+  if (ghM) result.github = 'https://' + ghM[0];
+
+  // Skills — look for a skills section
+  const skillsIdx = lines.findIndex(l => /^skills?/i.test(l));
+  if (skillsIdx !== -1) {
+    const skillLine = lines.slice(skillsIdx + 1, skillsIdx + 5).join(' ');
+    const skills = skillLine.split(/[,|•·;\/]/).map(s => s.trim()).filter(s => s.length > 1 && s.length < 40);
+    result.skills = skills.slice(0, 20);
+  }
+
+  // Summary
+  const summaryIdx = lines.findIndex(l => /^(summary|objective|profile|about)/i.test(l));
+  if (summaryIdx !== -1) {
+    result.summary = lines.slice(summaryIdx + 1, summaryIdx + 4).join(' ');
+  }
+
+  return result;
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function Toast({ message, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, []);
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+  const color = type === 'success' ? 'var(--green)' : type === 'error' ? 'var(--red)' : 'var(--blue)';
+  return (
+    <div className="toast">
+      <span style={{ color, fontWeight: 700, fontSize: 15 }}>{icon}</span>
+      <span>{message}</span>
+      <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text2)', cursor: 'pointer', fontSize: 16 }}>×</button>
+    </div>
+  );
+}
+
+// ─── Auth Screen ──────────────────────────────────────────────────────────────
+function AuthScreen({ onLogin }) {
+  const [mode, setMode] = useState('login');
+  const [form, setForm] = useState({ name: '', email: 'demo@resumeai.com', password: 'demo123' });
+  const [err, setErr] = useState('');
+
+  function submit(e) {
+    e.preventDefault();
+    if (!form.email || !form.password) { setErr('Please fill all fields.'); return; }
+    if (mode === 'signup' && !form.name) { setErr('Name required.'); return; }
+    // Simulate auth — store in localStorage
+    const user = { name: form.name || form.email.split('@')[0], email: form.email, id: uid() };
+    localStorage.setItem('resumeai_user', JSON.stringify(user));
+    onLogin(user);
+  }
+
+  return (
+    <div className="auth-container">
+      <div className="auth-card fade-in">
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div className="logo" style={{ justifyContent: 'center', marginBottom: 8 }}>
+            <span className="logo-dot"></span> ResumeAI
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--text2)' }}>
+            {mode === 'login' ? 'Sign in to your workspace' : 'Create your free account'}
+          </p>
+        </div>
+
+        {err && (
+          <div style={{ background: 'var(--red-bg)', color: 'var(--red)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', fontSize: 13, marginBottom: 16 }}>
+            {err}
+          </div>
+        )}
+
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {mode === 'signup' && (
+            <div>
+              <label className="label">Full Name</label>
+              <input className="input" placeholder="Alex Johnson" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} />
+            </div>
+          )}
+          <div>
+            <label className="label">Email</label>
+            <input className="input" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} />
+          </div>
+          <div>
+            <label className="label">Password</label>
+            <input className="input" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))} />
+          </div>
+          <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
+            {mode === 'login' ? 'Sign In' : 'Create Account'}
+          </button>
+        </form>
+
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text2)' }}>
+          {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+          <span style={{ color: 'var(--accent2)', cursor: 'pointer', fontWeight: 500 }} onClick={() => { setMode(m => m === 'login' ? 'signup' : 'login'); setErr(''); }}>
+            {mode === 'login' ? 'Sign up free' : 'Sign in'}
+          </span>
+        </div>
+
+        <div style={{ marginTop: 20, padding: '12px', background: 'var(--bg3)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--text2)', textAlign: 'center' }}>
+          Demo: <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent2)' }}>demo@resumeai.com</span> / <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent2)' }}>demo123</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Skill Input ──────────────────────────────────────────────────────────────
+function SkillInput({ skills, onChange }) {
+  const [input, setInput] = useState('');
+  function add() {
+    const trimmed = input.trim();
+    if (trimmed && !skills.includes(trimmed)) onChange([...skills, trimmed]);
+    setInput('');
+  }
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <input className="input" placeholder="Add a skill (e.g. React, Python...)" value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} />
+        <button className="btn btn-ghost btn-sm" onClick={add} style={{ whiteSpace: 'nowrap' }}>+ Add</button>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {skills.map(s => (
+          <span key={s} className="skill-chip">
+            {s}
+            <button className="remove-btn" onClick={() => onChange(skills.filter(x => x !== s))}>×</button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Experience Section ───────────────────────────────────────────────────────
+function ExperienceEditor({ entries, onChange }) {
+  function update(id, field, val) {
+    onChange(entries.map(e => e.id === id ? {...e, [field]: val} : e));
+  }
+  function addBullet(id) {
+    onChange(entries.map(e => e.id === id ? {...e, bullets: [...e.bullets, '']} : e));
+  }
+  function updateBullet(id, i, val) {
+    onChange(entries.map(e => e.id === id ? {...e, bullets: e.bullets.map((b,j) => j===i ? val : b)} : e));
+  }
+  function removeBullet(id, i) {
+    onChange(entries.map(e => e.id === id ? {...e, bullets: e.bullets.filter((_,j) => j!==i)} : e));
+  }
+  function remove(id) { onChange(entries.filter(e => e.id !== id)); }
+  function addNew() { onChange([...entries, { id: uid(), company:'', role:'', duration:'', location:'', bullets:[''] }]); }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {entries.map((exp, idx) => (
+        <div key={exp.id} className="card" style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Experience #{idx+1}</span>
+            <button className="btn btn-danger btn-sm" onClick={() => remove(exp.id)}>Remove</button>
+          </div>
+          <div className="grid-2" style={{ marginBottom: 10 }}>
+            <div>
+              <label className="label">Company</label>
+              <input className="input" placeholder="Acme Corp" value={exp.company} onChange={e => update(exp.id,'company',e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Role / Title</label>
+              <input className="input" placeholder="Software Engineer" value={exp.role} onChange={e => update(exp.id,'role',e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Duration</label>
+              <input className="input" placeholder="Jan 2022 – Present" value={exp.duration} onChange={e => update(exp.id,'duration',e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Location</label>
+              <input className="input" placeholder="San Francisco, CA" value={exp.location} onChange={e => update(exp.id,'location',e.target.value)} />
+            </div>
+          </div>
+          <label className="label">Achievements / Responsibilities</label>
+          {exp.bullets.map((b, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <span style={{ color: 'var(--accent2)', marginTop: 10, fontSize: 12 }}>•</span>
+              <input className="input" placeholder="Led migration to microservices, reducing latency by 40%" value={b}
+                onChange={e => updateBullet(exp.id, i, e.target.value)} />
+              {exp.bullets.length > 1 && (
+                <button className="btn btn-danger btn-sm" onClick={() => removeBullet(exp.id, i)} style={{ padding: '5px 8px' }}>×</button>
+              )}
+            </div>
+          ))}
+          <button className="btn btn-ghost btn-sm" onClick={() => addBullet(exp.id)} style={{ marginTop: 4 }}>+ Add bullet</button>
+        </div>
+      ))}
+      <button className="btn btn-ghost" onClick={addNew} style={{ width: '100%', justifyContent: 'center' }}>
+        + Add Experience
+      </button>
+    </div>
+  );
+}
+
+// ─── Education Section ────────────────────────────────────────────────────────
+function EducationEditor({ entries, onChange }) {
+  function update(id, field, val) { onChange(entries.map(e => e.id === id ? {...e,[field]:val} : e)); }
+  function remove(id) { onChange(entries.filter(e => e.id !== id)); }
+  function addNew() { onChange([...entries, { id:uid(), institution:'', degree:'', field:'', year:'', gpa:'' }]); }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {entries.map((edu, idx) => (
+        <div key={edu.id} className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Education #{idx+1}</span>
+            <button className="btn btn-danger btn-sm" onClick={() => remove(edu.id)}>Remove</button>
+          </div>
+          <div className="grid-2">
+            <div>
+              <label className="label">Institution</label>
+              <input className="input" placeholder="MIT" value={edu.institution} onChange={e => update(edu.id,'institution',e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Degree</label>
+              <input className="input" placeholder="B.S." value={edu.degree} onChange={e => update(edu.id,'degree',e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Field of Study</label>
+              <input className="input" placeholder="Computer Science" value={edu.field} onChange={e => update(edu.id,'field',e.target.value)} />
+            </div>
+            <div className="grid-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <div>
+                <label className="label">Year</label>
+                <input className="input" placeholder="2023" value={edu.year} onChange={e => update(edu.id,'year',e.target.value)} />
+              </div>
+              <div>
+                <label className="label">GPA (opt.)</label>
+                <input className="input" placeholder="3.8" value={edu.gpa} onChange={e => update(edu.id,'gpa',e.target.value)} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+      <button className="btn btn-ghost" onClick={addNew} style={{ width: '100%', justifyContent: 'center' }}>+ Add Education</button>
+    </div>
+  );
+}
+
+// ─── Projects Section ─────────────────────────────────────────────────────────
+function ProjectsEditor({ entries, onChange }) {
+  function update(id, field, val) { onChange(entries.map(e => e.id === id ? {...e,[field]:val} : e)); }
+  function remove(id) { onChange(entries.filter(e => e.id !== id)); }
+  function addNew() { onChange([...entries, { id:uid(), name:'', tech:'', description:'', url:'' }]); }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {entries.map((proj, idx) => (
+        <div key={proj.id} className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Project #{idx+1}</span>
+            <button className="btn btn-danger btn-sm" onClick={() => remove(proj.id)}>Remove</button>
+          </div>
+          <div className="grid-2" style={{ marginBottom: 10 }}>
+            <div>
+              <label className="label">Project Name</label>
+              <input className="input" placeholder="DataFlow Pipeline" value={proj.name} onChange={e => update(proj.id,'name',e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Tech Stack</label>
+              <input className="input" placeholder="React, Node.js, PostgreSQL" value={proj.tech} onChange={e => update(proj.id,'tech',e.target.value)} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <label className="label">Description</label>
+            <textarea className="textarea" placeholder="Built a real-time data pipeline that processed 1M+ events/day..." value={proj.description} onChange={e => update(proj.id,'description',e.target.value)} />
+          </div>
+          <div>
+            <label className="label">URL (optional)</label>
+            <input className="input" placeholder="https://github.com/..." value={proj.url} onChange={e => update(proj.id,'url',e.target.value)} />
+          </div>
+        </div>
+      ))}
+      <button className="btn btn-ghost" onClick={addNew} style={{ width: '100%', justifyContent: 'center' }}>+ Add Project</button>
+    </div>
+  );
+}
+
+// ─── Reality Check Panel ──────────────────────────────────────────────────────
+function RealityCheck({ resume }) {
+  const score = computeStrengthScore(resume);
+  const allText = [resume.summary, ...(resume.experience?.flatMap(e=>e.bullets)||[])].join(' ');
+  const weak = detectWeakPhrases(allText);
+
+  const [roast, setRoast] = useState('');
+  const [roasting, setRoasting] = useState(false);
+
+  const scoreColor = getScoreColor(score);
+
+  const segs = [0,25,50,75].map(thresh => score >= thresh + 25 ? scoreColor : thresh < 50 ? 'var(--red)' : thresh < 75 ? 'var(--yellow)' : 'var(--green)');
+
+  function getRoast() {
+    setRoasting(true);
+    const roasts = [
+      `"${resume.name || 'Anonymous'}" — let's be real. Your summary reads like it was written by a motivational poster. "${resume.summary?.slice(0,40)}..." screams "I attended a LinkedIn seminar." Recruiters will skim past this in 0.3 seconds. Consider starting with a number. Any number. Please.`,
+      `Oh wow, ${resume.experience?.length || 0} job(s) listed. Impressive... if this were 1998. The bullet points are basically diary entries. "Responsible for things" — great. Truly groundbreaking. Try leading with impact: how much money did you make or save? That's what actually gets callbacks.`,
+      `Let me check... yes, you used "${weak[0] || 'team player'}" — the phrase that every recruiter has highlighted in red since 2005. Your resume isn't bad, it's just aggressively mediocre. Which is somehow worse than bad. Fix the weak phrases, add metrics, and maybe we'll talk.`,
+      `The good news: you have a resume. The bad news: so does everyone else. Yours currently stands out for all the wrong reasons — mainly the absence of a single quantifiable achievement. "Helped with projects" is not an achievement. It's a participation trophy in word form.`,
+    ];
+    setTimeout(() => {
+      setRoast(roasts[Math.floor(Math.random()*roasts.length)]);
+      setRoasting(false);
+    }, 1200);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Score */}
+      <div className="card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div className="score-ring" style={{
+            background: `conic-gradient(${scoreColor} ${score}%, var(--bg3) 0)`,
+            boxShadow: `0 0 24px ${scoreColor}33`
+          }}>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: scoreColor, fontFamily: 'var(--font-mono)' }}>
+              {score}
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
+              Resume Strength
+              <span className="badge badge-purple" style={{ marginLeft: 8, fontSize: 11 }}>
+                {score >= 75 ? '🟢 Strong' : score >= 50 ? '🟡 Average' : '🔴 Weak'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[0,1,2,3].map(i => (
+                <div key={i} className="strength-seg" style={{ background: score >= (i+1)*25 ? scoreColor : 'var(--bg3)' }} />
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6 }}>
+              {score < 50 ? 'Add more detail, metrics, and sections to boost your score' :
+               score < 75 ? 'Good start! Add metrics and remove weak phrases to reach 75+' :
+               'Excellent resume! Fine-tune weak phrases for perfection'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Score Breakdown */}
+      <div className="card">
+        <div className="section-title">Score Breakdown</div>
+        {[
+          ['Contact Info', resume.email && resume.phone ? 100 : resume.email ? 60 : 0],
+          ['Summary', Math.min(100, (resume.summary?.length||0)/1.5)],
+          ['Skills', Math.min(100, ((resume.skills?.length||0)/15)*100)],
+          ['Experience', Math.min(100, ((resume.experience?.length||0)/3)*100)],
+          ['Education', resume.education?.length ? 100 : 0],
+          ['Projects', Math.min(100, ((resume.projects?.length||0)/3)*100)],
+        ].map(([label, pct]) => (
+          <div key={label} style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 12, color: 'var(--text2)' }}>{label}</span>
+              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: pct >= 70 ? 'var(--green)' : 'var(--yellow)' }}>{Math.round(pct)}%</span>
+            </div>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width: pct+'%', background: pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--yellow)' : 'var(--red)' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Weak Phrases */}
+      {weak.length > 0 && (
+        <div className="card">
+          <div className="section-title">Weak Phrases Detected</div>
+          {weak.map(p => (
+            <div key={p} style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--red-bg)', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--red)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--red)' }}>"{p}"</span>
+                <span className="badge badge-red" style={{ fontSize: 10 }}>Weak</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text2)' }}>Try instead:</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                {(PHRASE_ALTERNATIVES[p] || ['Use a stronger action verb + metric']).map(alt => (
+                  <span key={alt} className="badge badge-green" style={{ fontSize: 11 }}>{alt}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Roast Mode */}
+      <div className="card">
+        <div className="section-title">🔥 Roast Mode</div>
+        <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>Get brutally honest feedback about your resume (for entertainment + insight).</p>
+        <button className="btn btn-ghost" onClick={getRoast} disabled={roasting} style={{ width: '100%', justifyContent: 'center' }}>
+          {roasting ? '🔥 Roasting...' : '🔥 Roast My Resume'}
+        </button>
+        {roast && (
+          <div className="roast-box" style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--red)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>🔥 Roast</div>
+            {roast}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Job Customizer ───────────────────────────────────────────────────────────
+function JobCustomizer({ resume }) {
+  const [jd, setJd] = useState('');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  function analyze() {
+    if (!jd.trim()) return;
+    setLoading(true);
+    setTimeout(() => {
+      const jdLower = jd.toLowerCase();
+      const mySkills = resume.skills?.map(s => s.toLowerCase()) || [];
+      // Find matching skills
+      const matched = mySkills.filter(s => jdLower.includes(s));
+      // Find missing keywords (extract nouns from JD)
+      const words = jd.split(/\W+/).filter(w => w.length > 4);
+      const freq = {};
+      words.forEach(w => { const lw = w.toLowerCase(); freq[lw] = (freq[lw]||0)+1; });
+      const topKeywords = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([w])=>w);
+      const missing = topKeywords.filter(kw => !mySkills.includes(kw) && !['experience','skills','team','work','using','with','from'].includes(kw)).slice(0,8);
+
+      const match = Math.round((matched.length / Math.max(mySkills.length, 1)) * 100);
+
+      setResult({ matched, missing, match, topKeywords: topKeywords.slice(0,10) });
+      setLoading(false);
+    }, 1000);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="card">
+        <div className="section-title">Job Description</div>
+        <textarea className="textarea" style={{ minHeight: 140 }} placeholder="Paste the job description here... We'll analyze it and show you how to customize your resume for this specific role." value={jd} onChange={e => setJd(e.target.value)} />
+        <button className="btn btn-primary" onClick={analyze} disabled={loading || !jd.trim()} style={{ marginTop: 12, width: '100%', justifyContent: 'center' }}>
+          {loading ? '⚡ Analyzing...' : '⚡ Analyze & Match'}
+        </button>
+      </div>
+
+      {result && (
+        <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Match Score */}
+          <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
+            <div style={{ fontSize: 48, fontWeight: 700, fontFamily: 'var(--font-mono)', color: getScoreColor(result.match) }}>
+              {result.match}%
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4 }}>Job Match Score</div>
+            <div className="progress-bar" style={{ marginTop: 12 }}>
+              <div className="progress-fill" style={{ width: result.match+'%', background: getScoreColor(result.match) }} />
+            </div>
+          </div>
+
+          {/* Matched Skills */}
+          <div className="card">
+            <div className="section-title">✅ Skills You Have</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {result.matched.length ? result.matched.map(s => (
+                <span key={s} className="badge badge-green">{s}</span>
+              )) : <span style={{ fontSize: 13, color: 'var(--text2)' }}>No direct matches found</span>}
+            </div>
+          </div>
+
+          {/* Missing Keywords */}
+          {result.missing.length > 0 && (
+            <div className="card">
+              <div className="section-title">❌ Missing Keywords</div>
+              <p style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 10 }}>Add these to your resume to increase your match score:</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {result.missing.map(s => (
+                  <span key={s} className="badge badge-red">{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Suggestions */}
+          <div className="card">
+            <div className="section-title">💡 Recommendations</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                result.match < 50 && 'Your skills section needs significant work. Add relevant technologies from the JD.',
+                result.missing.length > 5 && `Consider adding ${result.missing.slice(0,3).join(', ')} to your skills.`,
+                !resume.summary?.trim() && 'Add a tailored summary mentioning the specific role and company.',
+                (resume.experience?.length || 0) < 2 && 'Consider adding more experience or relevant projects.',
+                `Reorder your skills to put ${result.matched.slice(0,3).join(', ')} first — the recruiter looks for these.`,
+              ].filter(Boolean).map((tip, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, padding: '8px 10px', background: 'var(--bg3)', borderRadius: 'var(--radius-sm)' }}>
+                  <span style={{ color: 'var(--accent2)', flexShrink: 0 }}>→</span>
+                  <span style={{ fontSize: 13, color: 'var(--text2)' }}>{tip}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Resume Templates ─────────────────────────────────────────────────────────
+function ResumeModern({ r }) {
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#1a1928', background: '#fff', padding: 0, minHeight: 800 }}>
+      {/* Header */}
+      <div style={{ background: '#6456e8', color: '#fff', padding: '32px 40px 28px' }}>
+        <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontFamily: "'DM Serif Display', serif", fontStyle: 'italic' }}>
+          {r.name || 'Your Name'}
+        </div>
+        <div style={{ fontSize: 14, opacity: 0.85, marginTop: 4, fontWeight: 500 }}>{r.title || 'Professional Title'}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', marginTop: 12, fontSize: 12, opacity: 0.8 }}>
+          {r.email && <span>✉ {r.email}</span>}
+          {r.phone && <span>📞 {r.phone}</span>}
+          {r.location && <span>📍 {r.location}</span>}
+          {r.linkedin && <span>in {r.linkedin.replace('https://','')}</span>}
+          {r.github && <span>⌥ {r.github.replace('https://','')}</span>}
+        </div>
+      </div>
+
+      <div style={{ padding: '28px 40px', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 28 }}>
+        {/* Left Column */}
+        <div>
+          {r.summary && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 8, paddingBottom: 4, borderBottom: '2px solid #6456e8' }}>Summary</div>
+              <p style={{ fontSize: 13, color: '#444', lineHeight: 1.6 }}>{r.summary}</p>
+            </div>
+          )}
+
+          {r.experience?.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 12, paddingBottom: 4, borderBottom: '2px solid #6456e8' }}>Experience</div>
+              {r.experience.map((e, i) => (
+                <div key={i} style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{e.role || 'Role'}</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>{e.duration}</div>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#6456e8', marginBottom: 4 }}>{e.company}{e.location ? ` · ${e.location}` : ''}</div>
+                  {e.bullets?.map((b,j) => b.trim() && <div key={j} style={{ fontSize: 12, color: '#444', marginBottom: 3, paddingLeft: 12, position: 'relative', lineHeight: 1.5 }}><span style={{ position: 'absolute', left: 0, color: '#6456e8' }}>•</span>{b}</div>)}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {r.projects?.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 12, paddingBottom: 4, borderBottom: '2px solid #6456e8' }}>Projects</div>
+              {r.projects.map((p, i) => (
+                <div key={i} style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</div>
+                    {p.url && <div style={{ fontSize: 11, color: '#6456e8' }}>{p.url}</div>}
+                  </div>
+                  {p.tech && <div style={{ fontSize: 11, color: '#888', marginBottom: 3 }}>{p.tech}</div>}
+                  {p.description && <div style={{ fontSize: 12, color: '#444', lineHeight: 1.5 }}>{p.description}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column */}
+        <div>
+          {r.skills?.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 10, paddingBottom: 4, borderBottom: '2px solid #6456e8' }}>Skills</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {r.skills.map(s => <span key={s} style={{ background: '#f0effe', color: '#6456e8', padding: '3px 8px', borderRadius: 12, fontSize: 11, fontWeight: 500 }}>{s}</span>)}
+              </div>
+            </div>
+          )}
+
+          {r.education?.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 10, paddingBottom: 4, borderBottom: '2px solid #6456e8' }}>Education</div>
+              {r.education.map((e, i) => (
+                <div key={i} style={{ marginBottom: 12 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{e.institution}</div>
+                  <div style={{ fontSize: 12, color: '#444' }}>{e.degree}{e.field ? ` in ${e.field}` : ''}</div>
+                  <div style={{ fontSize: 11, color: '#888' }}>{e.year}{e.gpa ? ` · GPA: ${e.gpa}` : ''}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {r.certifications?.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 10, paddingBottom: 4, borderBottom: '2px solid #6456e8' }}>Certifications</div>
+              {r.certifications.map((c, i) => (
+                <div key={i} style={{ marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, fontSize: 12 }}>{c.name}</div>
+                  <div style={{ fontSize: 11, color: '#888' }}>{c.issuer}{c.year ? ` · ${c.year}` : ''}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResumeClassic({ r }) {
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#1a1928', background: '#fff', padding: '36px 44px', minHeight: 800 }}>
+      <div style={{ textAlign: 'center', marginBottom: 20, borderBottom: '2px solid #1a1928', paddingBottom: 16 }}>
+        <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.01em' }}>{r.name || 'Your Name'}</div>
+        {r.title && <div style={{ fontSize: 13, color: '#555', marginTop: 4 }}>{r.title}</div>}
+        <div style={{ fontSize: 12, color: '#666', marginTop: 8, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 14px' }}>
+          {r.email && <span>{r.email}</span>}
+          {r.phone && <span>{r.phone}</span>}
+          {r.location && <span>{r.location}</span>}
+          {r.linkedin && <span>{r.linkedin}</span>}
+        </div>
+      </div>
+
+      {r.summary && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Professional Summary</div>
+          <p style={{ fontSize: 13, color: '#444', lineHeight: 1.6 }}>{r.summary}</p>
+        </div>
+      )}
+
+      {r.experience?.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, borderBottom: '1px solid #ddd', paddingBottom: 4 }}>Work Experience</div>
+          {r.experience.map((e, i) => (
+            <div key={i} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{e.role} — {e.company}</div>
+                <div style={{ fontSize: 11, color: '#888' }}>{e.duration}</div>
+              </div>
+              {e.location && <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>{e.location}</div>}
+              {e.bullets?.map((b,j) => b.trim() && <div key={j} style={{ fontSize: 12, color: '#444', marginBottom: 2, paddingLeft: 14, position: 'relative', lineHeight: 1.5 }}><span style={{ position: 'absolute', left: 2 }}>•</span>{b}</div>)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        {r.education?.length > 0 && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, borderBottom: '1px solid #ddd', paddingBottom: 4 }}>Education</div>
+            {r.education.map((e, i) => (
+              <div key={i} style={{ marginBottom: 10 }}>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{e.institution}</div>
+                <div style={{ fontSize: 12 }}>{e.degree}{e.field ? ` in ${e.field}` : ''}</div>
+                <div style={{ fontSize: 11, color: '#888' }}>{e.year}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {r.skills?.length > 0 && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, borderBottom: '1px solid #ddd', paddingBottom: 4 }}>Skills</div>
+            <div style={{ fontSize: 12, color: '#444', lineHeight: 1.8 }}>{r.skills.join(' · ')}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ResumeMinimal({ r }) {
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: '#111', background: '#fff', padding: '40px', minHeight: 800 }}>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontSize: 32, fontWeight: 300, letterSpacing: '-0.03em', color: '#111' }}>{r.name || 'Your Name'}</div>
+        {r.title && <div style={{ fontSize: 14, color: '#888', marginTop: 4, fontWeight: 400 }}>{r.title}</div>}
+        <div style={{ fontSize: 12, color: '#aaa', marginTop: 10, display: 'flex', gap: 16 }}>
+          {r.email && <span>{r.email}</span>}
+          {r.phone && <span>{r.phone}</span>}
+          {r.location && <span>{r.location}</span>}
+        </div>
+      </div>
+
+      {r.summary && <p style={{ fontSize: 13, color: '#555', lineHeight: 1.7, marginBottom: 32, maxWidth: '80%' }}>{r.summary}</p>}
+
+      {r.experience?.length > 0 && (
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#aaa', marginBottom: 16 }}>Experience</div>
+          {r.experience.map((e, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 16, marginBottom: 20 }}>
+              <div style={{ fontSize: 11, color: '#aaa', paddingTop: 2 }}>{e.duration}</div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{e.role}</div>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>{e.company}</div>
+                {e.bullets?.map((b,j) => b.trim() && <div key={j} style={{ fontSize: 12, color: '#555', marginBottom: 2 }}>— {b}</div>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {r.skills?.length > 0 && (
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#aaa', marginBottom: 12 }}>Skills</div>
+          <div style={{ fontSize: 12, color: '#555' }}>{r.skills.join('  ·  ')}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResumeBold({ r }) {
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: '#fff', minHeight: 800 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr' }}>
+        {/* Sidebar */}
+        <div style={{ background: '#1a1928', color: '#f0eff8', padding: '32px 20px', minHeight: 800 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4, wordBreak: 'break-word' }}>{r.name || 'Your Name'}</div>
+          {r.title && <div style={{ fontSize: 11, color: '#9998b3', marginBottom: 24 }}>{r.title}</div>}
+
+          {r.email && <div style={{ fontSize: 11, color: '#9998b3', marginBottom: 6, wordBreak: 'break-all' }}>✉ {r.email}</div>}
+          {r.phone && <div style={{ fontSize: 11, color: '#9998b3', marginBottom: 6 }}>☎ {r.phone}</div>}
+          {r.location && <div style={{ fontSize: 11, color: '#9998b3', marginBottom: 24 }}>⌖ {r.location}</div>}
+
+          {r.skills?.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 10 }}>Skills</div>
+              {r.skills.map(s => <div key={s} style={{ fontSize: 11, color: '#ccc', marginBottom: 4, paddingLeft: 8, borderLeft: '2px solid #6456e8' }}>{s}</div>)}
+            </div>
+          )}
+
+          {r.education?.length > 0 && (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 10 }}>Education</div>
+              {r.education.map((e,i) => (
+                <div key={i} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{e.institution}</div>
+                  <div style={{ fontSize: 11, color: '#9998b3' }}>{e.degree}</div>
+                  <div style={{ fontSize: 10, color: '#666' }}>{e.year}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Main */}
+        <div style={{ padding: '32px 28px' }}>
+          {r.summary && (
+            <div style={{ marginBottom: 24, padding: '16px', background: '#f7f6ff', borderRadius: 8, borderLeft: '4px solid #6456e8' }}>
+              <p style={{ fontSize: 13, color: '#444', lineHeight: 1.6, margin: 0 }}>{r.summary}</p>
+            </div>
+          )}
+
+          {r.experience?.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 14 }}>Experience</div>
+              {r.experience.map((e,i) => (
+                <div key={i} style={{ marginBottom: 18, paddingLeft: 12, borderLeft: '2px solid #e8e6fc' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{e.role}</div>
+                    <div style={{ fontSize: 11, color: '#888', background: '#f7f6ff', padding: '2px 8px', borderRadius: 12 }}>{e.duration}</div>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6456e8', marginBottom: 6 }}>{e.company}</div>
+                  {e.bullets?.map((b,j) => b.trim() && <div key={j} style={{ fontSize: 12, color: '#444', marginBottom: 3, paddingLeft: 12, position: 'relative' }}><span style={{ position: 'absolute', left: 0, color: '#6456e8' }}>▸</span>{b}</div>)}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {r.projects?.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6456e8', marginBottom: 14 }}>Projects</div>
+              {r.projects.map((p,i) => (
+                <div key={i} style={{ marginBottom: 14 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{p.name} {p.tech && <span style={{ fontWeight: 400, fontSize: 11, color: '#888' }}>— {p.tech}</span>}</div>
+                  {p.description && <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5, marginTop: 3 }}>{p.description}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const TEMPLATE_COMPONENTS = { Modern: ResumeModern, Classic: ResumeClassic, Minimal: ResumeMinimal, Bold: ResumeBold };
+
+// ─── Import System ─────────────────────────────────────────────────────────────
+function ImportSystem({ onImport }) {
+  const [dragover, setDragover] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('');
+  const fileRef = useRef();
+
+  function processFile(file) {
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['pdf','txt','doc','docx'].includes(ext)) {
+      setStatus('❌ Please upload a PDF, DOCX, or TXT file.');
+      return;
+    }
+    setLoading(true);
+    setStatus('⏳ Extracting text from your resume...');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setTimeout(() => {
+        const text = e.target.result;
+        const parsed = parseResumeText(typeof text === 'string' ? text : '');
+        onImport(parsed);
+        setStatus('✅ Resume imported! Please review and edit the extracted data.');
+        setLoading(false);
+      }, 800);
+    };
+    reader.readAsText(file);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div
+        className={`drop-zone ${dragover ? 'dragover' : ''}`}
+        onClick={() => fileRef.current?.click()}
+        onDragOver={e => { e.preventDefault(); setDragover(true); }}
+        onDragLeave={() => setDragover(false)}
+        onDrop={e => { e.preventDefault(); setDragover(false); processFile(e.dataTransfer.files[0]); }}
+      >
+        <div style={{ fontSize: 36, marginBottom: 12 }}>📄</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Drop your resume here</div>
+        <div style={{ fontSize: 12, color: 'var(--text2)' }}>PDF, DOCX, or TXT — we'll extract and auto-fill your info</div>
+        <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={e => { e.stopPropagation(); fileRef.current?.click(); }}>
+          Browse Files
+        </button>
+        <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.doc" style={{ display:'none' }} onChange={e => processFile(e.target.files[0])} />
+      </div>
+
+      {status && (
+        <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: status.startsWith('✅') ? 'var(--green-bg)' : status.startsWith('❌') ? 'var(--red-bg)' : 'var(--blue-bg)', color: status.startsWith('✅') ? 'var(--green)' : status.startsWith('❌') ? 'var(--red)' : 'var(--blue)', fontSize: 13 }}>
+          {status}
+        </div>
+      )}
+
+      <div className="card">
+        <div className="section-title">What gets extracted?</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {['Name & Title','Contact Info','Work Experience','Education','Skills','Projects'].map(item => (
+            <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text2)' }}>
+              <span style={{ color: 'var(--green)', fontWeight: 700 }}>✓</span> {item}
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 12, padding: '8px 10px', background: 'var(--yellow-bg)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--yellow)' }}>
+          💡 For best results, use a text-based PDF or TXT file. Scanned images may have limited extraction.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('resumeai_user')); } catch { return null; }
+  });
+  const [activeTab, setActiveTab] = useState('builder');
+  const [builderSection, setBuilderSection] = useState('basics');
+  const [template, setTemplate] = useState('Modern');
+  const [previewMode, setPreviewMode] = useState(false);
+  const [toast, setToast] = useState(null);
+  const previewRef = useRef();
+
+  const [resume, setResume] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('resumeai_current')) || { ...EMPTY_RESUME }; } catch { return { ...EMPTY_RESUME }; }
+  });
+
+  // Save to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('resumeai_current', JSON.stringify(resume));
+  }, [resume]);
+
+  // Apply theme
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  function showToast(message, type='info') {
+    setToast({ message, type, id: uid() });
+  }
+
+  function updateResume(field, value) {
+    setResume(r => ({ ...r, [field]: value }));
+  }
+
+  async function downloadPDF() {
+    showToast('Generating PDF...', 'info');
+    const el = previewRef.current;
+    if (!el) return;
+    try {
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, w, h);
+      pdf.save(`${resume.name || 'resume'}_resume.pdf`);
+      showToast('PDF downloaded!', 'success');
+    } catch(e) {
+      showToast('PDF generation failed. Try again.', 'error');
+    }
+  }
+
+  function importResume(parsed) {
+    setResume(r => ({ ...r, ...parsed }));
+    setActiveTab('builder');
+    showToast('Resume imported and auto-filled!', 'success');
+  }
+
+  const ResumeComponent = TEMPLATE_COMPONENTS[template] || ResumeModern;
+  const score = computeStrengthScore(resume);
+
+  if (!user) return <AuthScreen onLogin={u => { setUser(u); showToast(`Welcome, ${u.name}!`, 'success'); }} />;
+
+  const NAV = [
+    { id: 'builder', icon: '✏️', label: 'Resume Builder' },
+    { id: 'preview', icon: '👁', label: 'Preview & Export' },
+    { id: 'import', icon: '📤', label: 'Import Resume' },
+    { id: 'analyze', icon: '🔬', label: 'Reality Check' },
+    { id: 'customize', icon: '🎯', label: 'Job Customizer' },
+  ];
+
+  const BUILDER_SECTIONS = [
+    { id: 'basics', label: 'Contact & Basics' },
+    { id: 'summary', label: 'Summary' },
+    { id: 'skills', label: 'Skills' },
+    { id: 'experience', label: 'Experience' },
+    { id: 'education', label: 'Education' },
+    { id: 'projects', label: 'Projects' },
+    { id: 'certifications', label: 'Certifications' },
+  ];
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div className="header">
+        <div className="logo">
+          <span className="logo-dot"></span>
+          ResumeAI
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Score pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--bg3)', borderRadius: 20, border: '1px solid var(--border)' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: getScoreColor(score) }}></div>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: getScoreColor(score), fontWeight: 600 }}>{score}/100</span>
+          </div>
+
+          <button className="btn btn-ghost btn-sm" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}>
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px', background: 'var(--bg3)', borderRadius: 20, border: '1px solid var(--border)' }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff' }}>
+              {user.name[0].toUpperCase()}
+            </div>
+            <span style={{ fontSize: 12, color: 'var(--text2)' }}>{user.name}</span>
+          </div>
+
+          <button className="btn btn-ghost btn-sm" onClick={() => { localStorage.removeItem('resumeai_user'); setUser(null); }}>
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Sidebar */}
+        <div style={{ width: 220, background: 'var(--bg2)', borderRight: '1px solid var(--border)', padding: '16px 10px', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+          {NAV.map(n => (
+            <div key={n.id} className={`nav-item ${activeTab === n.id ? 'active' : ''}`} onClick={() => setActiveTab(n.id)}>
+              <span style={{ fontSize: 14 }}>{n.icon}</span>
+              <span>{n.label}</span>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={downloadPDF}>
+              ⬇ Download PDF
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
+
+          {/* ── Builder ── */}
+          {activeTab === 'builder' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
+              {/* Form side */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 600 }}>Build Your Resume</h2>
+                </div>
+
+                {/* Section Tabs */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 20 }}>
+                  {BUILDER_SECTIONS.map(s => (
+                    <button key={s.id} onClick={() => setBuilderSection(s.id)}
+                      className="btn btn-sm"
+                      style={{ background: builderSection === s.id ? 'var(--accent)' : 'var(--bg3)', color: builderSection === s.id ? '#fff' : 'var(--text2)', border: '1px solid var(--border)' }}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Basics */}
+                {builderSection === 'basics' && (
+                  <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div className="grid-2">
+                      <div>
+                        <label className="label">Full Name *</label>
+                        <input className="input" placeholder="Alex Johnson" value={resume.name} onChange={e => updateResume('name', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="label">Professional Title</label>
+                        <input className="input" placeholder="Full-Stack Developer" value={resume.title} onChange={e => updateResume('title', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="label">Email *</label>
+                        <input className="input" type="email" placeholder="alex@example.com" value={resume.email} onChange={e => updateResume('email', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="label">Phone</label>
+                        <input className="input" placeholder="+1 555 000 0000" value={resume.phone} onChange={e => updateResume('phone', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="label">Location</label>
+                        <input className="input" placeholder="San Francisco, CA" value={resume.location} onChange={e => updateResume('location', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="label">LinkedIn</label>
+                        <input className="input" placeholder="linkedin.com/in/alexjohnson" value={resume.linkedin} onChange={e => updateResume('linkedin', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="label">GitHub</label>
+                        <input className="input" placeholder="github.com/alexj" value={resume.github} onChange={e => updateResume('github', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="label">Website</label>
+                        <input className="input" placeholder="alexjohnson.dev" value={resume.website} onChange={e => updateResume('website', e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Summary */}
+                {builderSection === 'summary' && (
+                  <div className="fade-in">
+                    <label className="label">Professional Summary</label>
+                    <textarea className="textarea" style={{ minHeight: 140 }}
+                      placeholder="Results-oriented Full-Stack Developer with 5+ years of experience building scalable web applications. Delivered 3 products to market with 40% revenue growth. Expertise in React, Node.js, and cloud architecture."
+                      value={resume.summary} onChange={e => updateResume('summary', e.target.value)} />
+                    <div style={{ marginTop: 12, padding: '10px', background: 'var(--blue-bg)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--blue)' }}>
+                      💡 <strong>Pro tip:</strong> Lead with your strongest achievement + years of experience. Include 1-2 measurable outcomes.
+                    </div>
+                    {detectWeakPhrases(resume.summary).length > 0 && (
+                      <div style={{ marginTop: 10, padding: '10px', background: 'var(--red-bg)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--red)' }}>
+                        ⚠ Weak phrases detected: {detectWeakPhrases(resume.summary).join(', ')}. Head to Reality Check for suggestions.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Skills */}
+                {builderSection === 'skills' && (
+                  <div className="fade-in">
+                    <label className="label">Skills</label>
+                    <SkillInput skills={resume.skills} onChange={v => updateResume('skills', v)} />
+                    <div style={{ marginTop: 12, padding: '10px', background: 'var(--blue-bg)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--blue)' }}>
+                      💡 Press <kbd style={{ fontFamily: 'var(--font-mono)', fontSize: 11, padding: '1px 5px', background: 'var(--bg4)', borderRadius: 4 }}>Enter</kbd> after each skill. Include both hard skills (Python, SQL) and soft skills where relevant.
+                    </div>
+                  </div>
+                )}
+
+                {/* Experience */}
+                {builderSection === 'experience' && (
+                  <div className="fade-in">
+                    <ExperienceEditor entries={resume.experience} onChange={v => updateResume('experience', v)} />
+                  </div>
+                )}
+
+                {/* Education */}
+                {builderSection === 'education' && (
+                  <div className="fade-in">
+                    <EducationEditor entries={resume.education} onChange={v => updateResume('education', v)} />
+                  </div>
+                )}
+
+                {/* Projects */}
+                {builderSection === 'projects' && (
+                  <div className="fade-in">
+                    <ProjectsEditor entries={resume.projects} onChange={v => updateResume('projects', v)} />
+                  </div>
+                )}
+
+                {/* Certifications */}
+                {builderSection === 'certifications' && (
+                  <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {resume.certifications.map((cert, idx) => (
+                      <div key={cert.id} className="card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>Cert #{idx+1}</span>
+                          <button className="btn btn-danger btn-sm" onClick={() => updateResume('certifications', resume.certifications.filter(c => c.id !== cert.id))}>Remove</button>
+                        </div>
+                        <div className="grid-3">
+                          <div>
+                            <label className="label">Certificate Name</label>
+                            <input className="input" placeholder="AWS Solutions Architect" value={cert.name}
+                              onChange={e => updateResume('certifications', resume.certifications.map(c => c.id === cert.id ? {...c, name: e.target.value} : c))} />
+                          </div>
+                          <div>
+                            <label className="label">Issuer</label>
+                            <input className="input" placeholder="Amazon Web Services" value={cert.issuer}
+                              onChange={e => updateResume('certifications', resume.certifications.map(c => c.id === cert.id ? {...c, issuer: e.target.value} : c))} />
+                          </div>
+                          <div>
+                            <label className="label">Year</label>
+                            <input className="input" placeholder="2024" value={cert.year}
+                              onChange={e => updateResume('certifications', resume.certifications.map(c => c.id === cert.id ? {...c, year: e.target.value} : c))} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button className="btn btn-ghost" onClick={() => updateResume('certifications', [...resume.certifications, { id: uid(), name:'', issuer:'', year:'' }])} style={{ width: '100%', justifyContent: 'center' }}>
+                      + Add Certification
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Live Preview side */}
+              <div style={{ position: 'sticky', top: 0, height: 'fit-content' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)' }}>Live Preview</h3>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {TEMPLATES.map(t => (
+                      <button key={t} className="btn btn-sm" onClick={() => setTemplate(t)}
+                        style={{ background: template === t ? 'var(--accent)' : 'var(--bg3)', color: template === t ? '#fff' : 'var(--text2)', border: '1px solid var(--border)' }}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', transform: 'scale(0.85)', transformOrigin: 'top left', width: '117.6%', height: 580, overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}>
+                  <div ref={previewRef} id="resume-preview">
+                    <ResumeComponent r={resume} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Preview & Export ── */}
+          {activeTab === 'preview' && (
+            <div style={{ maxWidth: 900, margin: '0 auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 600 }}>Preview & Export</h2>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {TEMPLATES.map(t => (
+                      <button key={t} className="btn btn-sm btn-ghost" onClick={() => setTemplate(t)}
+                        style={{ background: template === t ? 'var(--accent)' : undefined, color: template === t ? '#fff' : undefined }}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <button className="btn btn-primary" onClick={downloadPDF}>⬇ Download PDF</button>
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-lg)' }}>
+                <div ref={previewRef} id="resume-preview-full">
+                  <ResumeComponent r={resume} />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                {[
+                  ['Resume Score', score + '/100', getScoreColor(score)],
+                  ['Sections Filled', Object.values({a:resume.name,b:resume.summary,c:resume.skills?.length,d:resume.experience?.length,e:resume.education?.length,f:resume.projects?.length}).filter(Boolean).length + '/6', 'var(--blue)'],
+                  ['Weak Phrases', detectWeakPhrases([resume.summary,...(resume.experience?.flatMap(e=>e.bullets)||[])].join(' ')).length, 'var(--yellow)'],
+                ].map(([label, val, color]) => (
+                  <div key={label} style={{ padding: '14px 16px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Import ── */}
+          {activeTab === 'import' && (
+            <div style={{ maxWidth: 640, margin: '0 auto' }}>
+              <div style={{ marginBottom: 20 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Import Existing Resume</h2>
+                <p style={{ fontSize: 13, color: 'var(--text2)' }}>Upload your existing resume and we'll extract the content automatically.</p>
+              </div>
+              <ImportSystem onImport={importResume} />
+            </div>
+          )}
+
+          {/* ── Analyze ── */}
+          {activeTab === 'analyze' && (
+            <div style={{ maxWidth: 640, margin: '0 auto' }}>
+              <div style={{ marginBottom: 20 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Reality Check</h2>
+                <p style={{ fontSize: 13, color: 'var(--text2)' }}>Analyze your resume for weak phrases, gaps, and get your strength score.</p>
+              </div>
+              <RealityCheck resume={resume} />
+            </div>
+          )}
+
+          {/* ── Customize ── */}
+          {activeTab === 'customize' && (
+            <div style={{ maxWidth: 700, margin: '0 auto' }}>
+              <div style={{ marginBottom: 20 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Job Customizer</h2>
+                <p style={{ fontSize: 13, color: 'var(--text2)' }}>Paste a job description to see how well your resume matches and what to improve.</p>
+              </div>
+              <JobCustomizer resume={resume} />
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* Toast */}
+      {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
